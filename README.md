@@ -3,7 +3,7 @@
 [![Deploy nsanamegenerator](https://github.com/AlexCherrypi/nsanamegenerator/actions/workflows/deploy.yml/badge.svg)](https://github.com/AlexCherrypi/nsanamegenerator/actions/workflows/deploy.yml) [![CC BY-SA 4.0][cc-by-sa-shield]][cc-by-sa]
 
 
-You might remember the old [nsanamegenerator.com](https://web.archive.org/web/20160318190656/http://www.nsanamegenerator.com/)
+You might remember the old [nsanamegenerator.com](https://web.archive.org/web/20160318190656/http://www.nsanamegenerator.com/). 
 In homage to that page I created this one. 
 
 By using the data of [Open English WordNet](https://en-word.net/) (you can also find them on [Github](https://github.com/globalwordnet/english-wordnet)) I created this random word generator.
