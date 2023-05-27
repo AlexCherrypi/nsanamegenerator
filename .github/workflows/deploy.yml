@@ -47,7 +47,7 @@ jobs:
         with:
           filters: |
             generateWords-changed:
-              - './generateWords.py'
+              - 'generateWords.py'
 
       - name: Restore cached words
         if: steps.checkChanges.outputs.generateWords-changed != 'true'
