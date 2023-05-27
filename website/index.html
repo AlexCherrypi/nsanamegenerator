@@ -16,6 +16,9 @@
 </style>
 </head>
 <body>
-<p class="text">Hello World</p>
+<p class="text" id="text"></p>
+<script>
+ document.getElementById("text").innerText = await random('nsl') + " " + await random('nsl');
+</script>
 </body>
 </html>
