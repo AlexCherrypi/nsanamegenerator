@@ -54,7 +54,7 @@ del lemmas
 
 for  key, value in words.items():
     if not os.path.exists(startingDir+key):
-        os.mkdir(startingDir+key)
+        os.makedirs(startingDir+key, exist_ok=True)
         pos = 0
         for word in words[key]:
             with open(startingDir+key+'/'+str(pos)+'.txt', 'w') as f:
