@@ -79,7 +79,7 @@ for  key, value in words.items():
     pos = 0
     for word in words[key]:
         with open(startingDir+key+'/'+str(pos)+'.txt', 'w') as f:
-            f.write(word)
+            f.write(word.encode())
         pos = pos + 1
     with open(startingDir+key+'/len.txt', 'w') as f:
             f.write(str(pos))
