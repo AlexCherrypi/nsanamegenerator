@@ -23,7 +23,7 @@ lemmas = file.getElementsByTagName('Lemma')
 del file
 words = dict()
 
-print("Finding and sortin words ...")
+print("Finding and sorting words ...")
 for lemma in lemmas:
     pos  = lemma.getAttribute('partOfSpeech')
     word = lemma.getAttribute('writtenForm')
