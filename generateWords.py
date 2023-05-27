@@ -4,7 +4,7 @@ import requests
 from random import randint
 import os
 
-startingDir = './words/'
+startingDir = './website/words/'
 
 
 url = 'https://en-word.net/static/english-wordnet-2022.xml.gz'
