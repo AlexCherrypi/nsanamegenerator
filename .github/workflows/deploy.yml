@@ -45,7 +45,7 @@ jobs:
         id: cache-words-restore
         uses: actions/cache/restore@v3
         with:
-          path: '/website/words'
+          path: './website/words'
           key: ache-words-${{ steps.date.outputs.date }}
 
       - name: Generate words
@@ -57,7 +57,7 @@ jobs:
         id: cache-words-save
         uses: actions/cache/save@v3
         with:
-          path: '/website/words'
+          path: './website/words'
           key: ${{ steps.cache-words-restore.outputs.cache-primary-key }}
      
       - name: Setup Pages
