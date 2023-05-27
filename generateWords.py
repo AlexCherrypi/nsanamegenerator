@@ -61,7 +61,7 @@ del lemmas
 print("Generating files ...")
 for  key, value in words.items():
     os.makedirs(startingDir+key, exist_ok=True)
-    print("Generating files for key '"+key+"'...")
+    print("Generating files for key '"+key+"' in '"+os.path.abspath(startingDir+key)+"'...")
     pos = 0
     for word in words[key]:
         with open(startingDir+key+'/'+str(pos)+'.txt', 'w') as f:
