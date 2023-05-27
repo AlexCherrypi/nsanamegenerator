@@ -4,6 +4,7 @@ import requests
 from random import randint
 import os
 
+
 startingDir = './website/words/'
 
 
