@@ -45,8 +45,7 @@ jobs:
         id: cache-words-restore
         uses: actions/cache/restore@v3
         with:
-          path: |
-            ./website/words
+          path: './website/words'
           key: ${{ steps.date.outputs.date }}
 
       - name: Generate words
