@@ -33,22 +33,22 @@ for lemma in lemmas:
         name = pos
         name2 = pos
         if ' ' in word:
-            name = name+'c'
-            name2 = name+'c'
+            name = name +'c'
+            name2 = name2 +'c'
             words.setdefault(pos+'c',set()) # c for combined 
             words[pos+'c'].add(word)
         else: 
-            name = name+'s'
+            name = name +'s'
+            name2 = name2 +'s'
             words.setdefault(pos+'s',set()) # s for single 
             words[pos+'s'].add(word)
 
         if '-' in word:
-            name = name+'d'
-            name2 = name+'d'
+            name = name +'d'
             words.setdefault(pos+'d',set()) # d for dash
             words[pos+'d'].add(word)
         else: 
-            name = name+'g'
+            name = name +'g'
             words.setdefault(pos+'g',set()) # l for lower 
             words[pos+'g'].add(word)
 
@@ -56,13 +56,13 @@ for lemma in lemmas:
         words[name].add(word)
 
         if any(char.isupper() for char in word):
-            name = name+'u'
-            name2 = name+'u'
+            name = name +'u'
+            name2 = name2 +'u'
             words.setdefault(pos+'u',set()) # u for upper 
             words[pos+'u'].add(word)
         else: 
-            name = name+'l'
-            name2 = name+'l'
+            name = name +'l'
+            name2 = name2 +'l'
             words.setdefault(pos+'l',set()) # l for lower 
             words[pos+'l'].add(word)
 
