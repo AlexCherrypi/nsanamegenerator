@@ -64,7 +64,7 @@ for  key, value in words.items():
     print("Generating files for key '"+key+"' in '"+os.path.abspath(startingDir+key)+"'...")
     pos = 0
     for word in words[key]:
-        with open(startingDir+key+'/'+str(pos)+'.json', 'w') as f:
+        with open(startingDir+key+'/'+str(pos)+'.txt', 'w') as f:
             f.write('"'+word+'"')
         pos = pos + 1
     with open(startingDir+key+'/len.json', 'w') as f:
