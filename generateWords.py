@@ -10,8 +10,8 @@ startingDir = './words/'
 url = 'https://en-word.net/static/english-wordnet-2022.xml.gz'
 print("Downloading from '"+ url +"'")
 download = requests.get(url).content
-del url
 print("Download from '"+ url +"' finished")
+del url
 print("Decopressing ...")
 xml = gzip.decompress(download).decode("utf-8")
 del download
