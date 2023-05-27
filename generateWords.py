@@ -67,7 +67,7 @@ for  key, value in words.items():
         with open(startingDir+key+'/'+str(pos)+'.txt', 'w') as f:
             f.write('"'+word+'"')
         pos = pos + 1
-    with open(startingDir+key+'/len.json', 'w') as f:
+    with open(startingDir+key+'/len.txt', 'w') as f:
             f.write(str(pos))
 
 print("Finished!")
