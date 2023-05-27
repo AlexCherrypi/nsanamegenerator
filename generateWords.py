@@ -7,7 +7,7 @@ import os
 startingDir = './website/words/'
 
 
-url = 'https://en-word.net/static/english-wordnet-2022.xml.gz'
+url = 'https://github.com/globalwordnet/english-wordnet/releases/download/2022-edition/english-wordnet-2022.xml.gz'
 print("Downloading from '"+ url +"'")
 download = requests.get(url).content
 print("Download from '"+ url +"' finished")
