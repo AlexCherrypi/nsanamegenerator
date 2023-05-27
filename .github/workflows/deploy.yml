@@ -39,14 +39,14 @@ jobs:
 
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        run: echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
       - name: Restore cached words
         id: cache-words-restore
         uses: actions/cache/restore@v3
         with:
-          path: './website/words'
-          key: ${{ steps.date.outputs.date }}
+          path: '/website/words'
+          key: ache-words-${{ steps.date.outputs.date }}
 
       - name: Generate words
         if: steps.cache-words-restore.outputs.cache-hit != 'true'
