@@ -8,16 +8,22 @@ startingDir = './words/'
 
 
 url = 'https://en-word.net/static/english-wordnet-2022.xml.gz'
+print("Downloading from '"+ url +"'")
 download = requests.get(url).content
 del url
+print("Download from '"+ url +"' finished")
+print("Decopressing ...")
 xml = gzip.decompress(download).decode("utf-8")
 del download
+print("Parsing xml ...")
 file = parseString(xml)
 del xml
+print("Finding Lemmas ...")
 lemmas = file.getElementsByTagName('Lemma')
 del file
 words = dict()
 
+print("Finding and sortin words ...")
 for lemma in lemmas:
     pos  = lemma.getAttribute('partOfSpeech')
     word = lemma.getAttribute('writtenForm')
@@ -52,11 +58,15 @@ for lemma in lemmas:
         words[name].add(word)
 del lemmas
 
+print("Generating files ...")
 for  key, value in words.items():
     os.makedirs(startingDir+key, exist_ok=True)
+    print("Generating files for key '"+key+"'...")
     pos = 0
     for word in words[key]:
         with open(startingDir+key+'/'+str(pos)+'.txt', 'w') as f:
             f.write(word)
         pos = pos + 1
+
+print("Finished!")
 
