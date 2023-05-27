@@ -62,7 +62,7 @@ jobs:
         run: python generateWords.py
 
       - name: Safe words
-        if: steps.cache-words-restore.outputs.cache-hit != 'true'
+        if: steps.cache-words-restore.outputs.cache-hit != 'true' || steps.checkChanges.outputs.generateWords-changed != 'true'
         id: cache-words-save
         uses: actions/cache/save@v3
         with:
