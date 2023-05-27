@@ -31,8 +31,10 @@ for lemma in lemmas:
         words.setdefault(pos,set())
         words[pos].add(word)
         name = pos
+        name2 = pos
         if ' ' in word:
             name = name+'c'
+            name2 = name+'c'
             words.setdefault(pos+'c',set()) # c for combined 
             words[pos+'c'].add(word)
         else: 
@@ -42,20 +44,32 @@ for lemma in lemmas:
 
         if '-' in word:
             name = name+'d'
+            name2 = name+'d'
             words.setdefault(pos+'d',set()) # d for dash
             words[pos+'d'].add(word)
+        else: 
+            name = name+'g'
+            words.setdefault(pos+'g',set()) # l for lower 
+            words[pos+'g'].add(word)
+
+        words.setdefault(name,set()) # combined
+        words[name].add(word)
 
         if any(char.isupper() for char in word):
             name = name+'u'
+            name2 = name+'u'
             words.setdefault(pos+'u',set()) # u for upper 
             words[pos+'u'].add(word)
         else: 
             name = name+'l'
+            name2 = name+'l'
             words.setdefault(pos+'l',set()) # l for lower 
             words[pos+'l'].add(word)
 
         words.setdefault(name,set()) # combined
         words[name].add(word)
+        words.setdefault(name2,set()) # combined
+        words[name2].add(word)
 del lemmas
 
 print("Generating files ...")
