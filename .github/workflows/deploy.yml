@@ -36,14 +36,41 @@ jobs:
           python-version: '3.9'
           cache: 'pip' # caching pip dependencies
       - run: pip install -r requirements.txt
-      - run: python generateWords.py
+
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
+      - name: Restore cached words
+        id: cache-words-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            ./website/words
+          key: ${{ steps.date.outputs.date }}
+
+      - name: Generate words
+        if: steps.cache-words-restore.outputs.cache-hit != 'true'
+        run: python generateWords.py
+
+      - name: Safe words
+        if: steps.cache-words-restore.outputs.cache-hit != 'true'
+        id: cache-words-save
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            path/to/dependencies
+            some/other/dependencies
+          key: ${{ steps.cache-words-restore.outputs.cache-primary-key }}
+     
       - name: Setup Pages
         uses: actions/configure-pages@v3
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
-          # Upload entire repository
           path: './website'
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
