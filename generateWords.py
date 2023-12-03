@@ -8,7 +8,7 @@ import datetime
 startingDir = './website/words/'
 
 
-url = 'https://github.com/globalwordnet/english-wordnet/releases/latest/english-wordnet-'+datetime.date.today().strftime("%Y")+'.xml.gz'
+url = 'https://github.com/globalwordnet/english-wordnet/releases/latest/download/english-wordnet-'+datetime.date.today().strftime("%Y")+'.xml.gz'
 print("Downloading from '"+ url +"'")
 download = requests.get(url).content
 print("Download from '"+ url +"' finished")
