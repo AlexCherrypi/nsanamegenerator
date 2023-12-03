@@ -20,7 +20,11 @@
 <p class="text" id="text"></p>
 <script>
 async function run () {
- document.getElementById("text").innerText = (await random('nsgl') + await random('nsgl')).toUpperCase();
+ let w1 = await random('nsgl');
+ let w2 = await random('nsgl');
+ document.getElementById("text").innerText = (await w1 + await w2).toUpperCase();
+ document.title = 'NSA Name Generator - '+ await w1 +' + '+ await w2;
+ 
 }
 run()
 </script>
