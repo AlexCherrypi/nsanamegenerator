@@ -50,7 +50,7 @@ for lemma in lemmas:
             words[pos+'d'].add(word)
         else: 
             name = name +'g'
-            words.setdefault(pos+'g',set()) # l for lower 
+            words.setdefault(pos+'g',set()) # g for no dash 
             words[pos+'g'].add(word)
 
         words.setdefault(name,set()) # combined
