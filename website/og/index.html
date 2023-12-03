@@ -24,7 +24,6 @@ async function run () {
  let w2 = await random('nsgl');
  document.getElementById("text").innerText = (await w1 + await w2).toUpperCase();
  document.title = 'NSA Name Generator - '+ await w1 +' + '+ await w2;
- 
 }
 run()
 </script>
