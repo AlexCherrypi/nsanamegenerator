@@ -28,7 +28,7 @@ print("Finding and sorting words ...")
 for lemma in lemmas:
     pos  = lemma.getAttribute('partOfSpeech')
     word = lemma.getAttribute('writtenForm')
-    if not word.isdigit() and len(word) > 2:
+    if not word.isdigit() and len(word) > 3:
         words.setdefault(pos,set())
         words[pos].add(word)
         name = pos
