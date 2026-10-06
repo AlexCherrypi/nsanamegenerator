@@ -19,11 +19,22 @@
 <body>
 <p class="text" id="text"></p>
 <script>
+// [word list, how many of its best known words are familiar, weight]
+const NOUNS = [['nsgl-animal', 120, 25], ['nsgl-food', 120, 20], ['nsgl-artifact', 250, 15], ['nsgl-plant', 100, 10],
+               ['nsgl-body', 40, 10], ['nsgl-person', 200, 10], ['nsgl-object', 50, 5], ['nsgl-phenomenon', 30, 3],
+               ['nsgl-substance', 50, 2]]
+const VULGAR = [['nsgl-vulgar', 60, 1]]
 async function run () {
- let w1 = await random('nsgl');
- let w2 = await random('nsgl');
- document.getElementById("text").innerText = (await w1 + await w2).toUpperCase();
- document.title = 'NSA Name Generator - '+ await w1 +' + '+ await w2;
+ const nerd = marks('nerd', 2), vulgar = marks('vulgar', 2)
+ let w1, w2
+ do {
+  // two nouns of different kinds
+  const first = choose(NOUNS)
+  w1 = await pick(vulgar[0] ? VULGAR : [first], nerd[0]);
+  w2 = await pick(vulgar[1] ? VULGAR : NOUNS.filter(list => list !== first), nerd[1]);
+ } while (!nerd.includes(true) && (w1 + w2).length > 14)
+ document.getElementById("text").innerText = (w1 + w2).toUpperCase();
+ document.title = 'NSA Name Generator - '+ w1 +' + '+ w2;
 }
 run().catch(error => {
  console.error(error);

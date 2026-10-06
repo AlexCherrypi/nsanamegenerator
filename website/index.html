@@ -19,8 +19,18 @@
 <body>
 <p class="text" id="text"></p>
 <script>
+// [word list, how many of its best known words are familiar, weight]
+const MOODS = [['asl-mood', 220, 1]]
+const ADJECTIVES = [['asl-all', 1500, 1], ['asl-pert', 500, 1]]
+const NOUNS = [['nsgl-animal', 150, 50], ['nsgl-food', 150, 20], ['nsgl-artifact', 250, 15], ['nsgl-person', 200, 15]]
+const VULGAR_ADJECTIVES = [['asl-vulgar', 20, 1]]
+const VULGAR_NOUNS = [['nsgl-vulgar', 60, 1]]
 async function run () {
- document.getElementById("text").innerText = await random('asl') + " " + await random('nsgl');
+ const nerd = marks('nerd', 2), vulgar = marks('vulgar', 2)
+ const adjective = await pick(vulgar[0] ? VULGAR_ADJECTIVES : nerd[0] ? ADJECTIVES : MOODS, nerd[0]);
+ const noun = await pick(vulgar[1] ? VULGAR_NOUNS : NOUNS, nerd[1]);
+ document.getElementById("text").innerText = adjective + " " + noun;
+ document.title = 'NSA Name Generator - ' + adjective + ' ' + noun;
 }
 run().catch(error => {
  console.error(error);
