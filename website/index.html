@@ -19,8 +19,14 @@
 <body>
 <p class="text" id="text"></p>
 <script>
+// [word list, how many of its best known words to pick from, weight]
+const ADJECTIVES = nerd ? [['asl-all', Infinity, 1], ['asl-pert', Infinity, 1]] : [['asl-mood', 220, 1]]
+const NOUNS = [['nsgl-animal', 150, 50], ['nsgl-food', 150, 20], ['nsgl-artifact', 250, 15], ['nsgl-person', 200, 15]]
 async function run () {
- document.getElementById("text").innerText = await random('asl') + " " + await random('nsgl');
+ const adjective = await pick(Math.random() < vulgar / 2 ? [['asl-vulgar', 40, 1]] : ADJECTIVES);
+ const noun = await pick(Math.random() < vulgar ? [['nsgl-vulgar', 100, 1]] : NOUNS);
+ document.getElementById("text").innerText = adjective + " " + noun;
+ document.title = 'NSA Name Generator - ' + adjective + ' ' + noun;
 }
 run().catch(error => {
  console.error(error);

@@ -1,9 +1,10 @@
-from defusedxml.minidom import parseString
-import gzip 
+from defusedxml.ElementTree import fromstring
+import gzip
 import requests
 import os
 import re
 import datetime
+from wordinfo import Entry, Synset, WordInfo, lists
 
 startingDir = './website/words/'
 
@@ -27,6 +28,23 @@ def findDownloadUrl():
             return candidate
     raise RuntimeError("Could not find a WordNet download")
 
+
+def writeList(key, wordList, usable=None):
+    os.makedirs(startingDir+key, exist_ok=True)
+    print("Generating files for key '"+key+"' in '"+os.path.abspath(startingDir+key)+"'...")
+    pos = 0
+    for word in wordList:
+        with open(startingDir+key+'/'+str(pos)+'.txt', 'w', encoding="utf-8") as f:
+            f.write(word)
+        pos = pos + 1
+    with open(startingDir+key+'/len.txt', 'w') as f:
+            f.write(str(pos))
+    if usable is not None:
+        # the first words are fit to show, the rest are slurs, plurals and the like
+        with open(startingDir+key+'/usable.txt', 'w') as f:
+                f.write(str(usable))
+
+
 url = findDownloadUrl()
 print("Downloading from '"+ url +"'")
 response = requests.get(url, timeout=600)
@@ -39,73 +57,62 @@ print("Decompressing ...")
 xml = gzip.decompress(download).decode("utf-8")
 del download
 print("Parsing xml ...")
-file = parseString(xml)
+root = fromstring(xml)
 del xml
-print("Finding Lemmas ...")
-lemmas = file.getElementsByTagName('Lemma')
-del file
-words = dict()
+print("Reading words and meanings ...")
+synsets = dict()
+for synset in root.iter('Synset'):
+    texts = [element.text or '' for element in synset if element.tag in ('Definition', 'Example')]
+    synsets[synset.get('id')] = Synset(synset.get('lexfile'), ' '.join(texts), synset.get('members', '').split(),
+                                       [(relation.get('relType'), relation.get('target')) for relation in synset.iter('SynsetRelation')])
+entries = list()
+for entry in root.iter('LexicalEntry'):
+    lemma = entry.find('Lemma')
+    senses = [(sense.get('id'), sense.get('synset'),
+               [(relation.get('relType'), relation.get('target')) for relation in sense.iter('SenseRelation')])
+              for sense in entry.iter('Sense')]
+    entries.append(Entry(lemma.get('writtenForm'), lemma.get('partOfSpeech'), lemma.find('Pronunciation') is not None, senses))
+del root
 
 print("Finding and sorting words ...")
-for lemma in lemmas:
-    pos  = lemma.getAttribute('partOfSpeech')
-    word = lemma.getAttribute('writtenForm')
+words = dict()
+for entry in entries:
+    if not entry.word.isdigit() and len(entry.word) > 3:
+        for key in lists(entry.word, entry.pos):
+            words.setdefault(key, set())
+            words[key].add(entry.word)
+
+# Extra lists per category of the main meaning (nsgl-animal, nsgl-food, ...) and
+# for moods and vulgar words (asl-mood, nsgl-vulgar), see wordinfo.py. They are
+# sorted from the best known to the most obscure word, so the website can pick
+# among the best known ones only. Slurs, plurals and the like come last, after
+# the number of words in usable.txt.
+print("Finding categories, moods and vulgar words ...")
+info = WordInfo(entries, synsets)
+del entries, synsets
+extraWords = dict()
+rank = dict()
+for word, pos in info.senses:
     if not word.isdigit() and len(word) > 3:
-        words.setdefault(pos,set())
-        words[pos].add(word)
-        name = pos
-        name2 = pos
-        if ' ' in word:
-            name = name +'c'
-            name2 = name2 +'c'
-            words.setdefault(pos+'c',set()) # c for combined 
-            words[pos+'c'].add(word)
-        else: 
-            name = name +'s'
-            name2 = name2 +'s'
-            words.setdefault(pos+'s',set()) # s for single 
-            words[pos+'s'].add(word)
-
-        if '-' in word:
-            name = name +'d'
-            words.setdefault(pos+'d',set()) # d for dash
-            words[pos+'d'].add(word)
-        else: 
-            name = name +'g'
-            words.setdefault(pos+'g',set()) # g for no dash 
-            words[pos+'g'].add(word)
-
-        words.setdefault(name,set()) # combined
-        words[name].add(word)
-
-        if any(char.isupper() for char in word):
-            name = name +'u'
-            name2 = name2 +'u'
-            words.setdefault(pos+'u',set()) # u for upper 
-            words[pos+'u'].add(word)
-        else: 
-            name = name +'l'
-            name2 = name2 +'l'
-            words.setdefault(pos+'l',set()) # l for lower 
-            words[pos+'l'].add(word)
-
-        words.setdefault(name,set()) # combined
-        words[name].add(word)
-        words.setdefault(name2,set()) # combined
-        words[name2].add(word)
-del lemmas
+        rank[(word, pos)] = info.rank(word, pos)
+        for extra in info.extra_lists(word, pos):
+            for key in lists(word, pos):
+                extraWords.setdefault(key+'-'+extra, list())
+                extraWords[key+'-'+extra].append((word, pos))
+usable = dict()
+for key, value in extraWords.items():
+    value.sort(key=rank.get)
+    extraWords[key] = [word for word, pos in value]
+    usable[key] = sum(not rank[entry][0] for entry in value)
+print("For example, the best known nouns per category:")
+for key in sorted(extraWords):
+    if key.startswith('nsgl-') or key in ('asl-mood', 'asl-vulgar'):
+        print("  "+key+": "+', '.join(extraWords[key][:12]))
 
 print("Generating files ...")
-for  key, value in words.items():
-    os.makedirs(startingDir+key, exist_ok=True)
-    print("Generating files for key '"+key+"' in '"+os.path.abspath(startingDir+key)+"'...")
-    pos = 0
-    for word in words[key]:
-        with open(startingDir+key+'/'+str(pos)+'.txt', 'w', encoding="utf-8") as f:
-            f.write(word)
-        pos = pos + 1
-    with open(startingDir+key+'/len.txt', 'w') as f:
-            f.write(str(pos))
+for key, value in words.items():
+    writeList(key, value)
+for key, value in extraWords.items():
+    writeList(key, value, usable[key])
 
 print("Finished!")
-
