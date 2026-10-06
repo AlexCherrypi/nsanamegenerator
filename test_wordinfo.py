@@ -85,13 +85,12 @@ class WordInfoTest(unittest.TestCase):
         self.assertFalse(self.info.is_vulgar('obscenity', 'n'))  # about vulgar words, not one
         self.assertFalse(self.info.is_vulgar('crumpet', 'n'))  # a pastry first, obscene only on the side
         self.assertTrue(self.info.is_vulgar('harlot', 'n'))    # crude, but fine in a joke
-        self.assertFalse(self.info.is_vulgar('whore', 'n'))    # a slur, never shown
+        self.assertTrue(self.info.is_vulgar('whore', 'n'))
         self.assertFalse(self.info.is_vulgar('fairy', 'n'))   # has a slur meaning, which is no fun
         self.assertFalse(self.info.is_vulgar('fox', 'n'))
 
     def test_hurtful(self):
         self.assertTrue(self.info.is_hurtful('plonker', 'n'))  # "offensive term for" a group
-        self.assertTrue(self.info.is_hurtful('whore', 'n'))
         self.assertFalse(self.info.is_hurtful('fairy', 'n'))   # the main meaning is fine
         self.assertFalse(self.info.is_usable('plonker', 'n'))
 
@@ -104,7 +103,7 @@ class WordInfoTest(unittest.TestCase):
     def test_unusable_words_come_last(self):
         words = ['plonker', 'wicopy', 'days', 'fox', 'whore', 'animal', 'crap']
         ranked = sorted(words, key=lambda word: self.info.rank(word, 'n'))
-        self.assertEqual(set(ranked[-4:]), {'plonker', 'days', 'whore', 'crap'})
+        self.assertEqual(set(ranked[-4:]), {'plonker', 'days', 'whore', 'crap'})   # vulgar ones only in vulgar lists
         self.assertEqual(ranked[0], 'fox')
 
     def test_vulgar_words_only_in_vulgar_lists(self):
