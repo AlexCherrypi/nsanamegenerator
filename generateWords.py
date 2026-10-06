@@ -3,14 +3,23 @@ import gzip
 import requests
 from random import randint
 import os
-import datetime
+import re
 
 startingDir = './website/words/'
 
 
-url = 'https://github.com/globalwordnet/english-wordnet/releases/latest/download/english-wordnet-'+datetime.date.today().strftime("%Y")+'.xml.gz'
+# The asset name contains the release year, which is not necessarily the current year,
+# so look up the actual file name of the latest release.
+release = requests.get('https://api.github.com/repos/globalwordnet/english-wordnet/releases/latest', timeout=60)
+release.raise_for_status()
+url = next(asset['browser_download_url'] for asset in release.json()['assets']
+           if re.fullmatch(r'english-wordnet-\d{4}\.xml\.gz', asset['name']))
+del release
 print("Downloading from '"+ url +"'")
-download = requests.get(url).content
+response = requests.get(url, timeout=600)
+response.raise_for_status()
+download = response.content
+del response
 print("Download from '"+ url +"' finished")
 del url
 print("Decopressing ...")
