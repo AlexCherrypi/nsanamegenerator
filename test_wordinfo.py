@@ -28,6 +28,7 @@ def wordnet():
         'fairy': Synset('noun.person', 'a small being, human in form', ['oewn-fairy-n'], []),
         'fairy-slur': Synset('noun.person', 'offensive term for a homosexual man', ['oewn-fairy-n'], []),
         'plonker': Synset('noun.person', 'offensive term for a person from somewhere', ['oewn-plonker-n'], []),
+        'hillbilly': Synset('noun.person', 'a disparaging term for an unsophisticated person', ['oewn-hillbilly-n'], []),
     }
     entries = [Entry(word, pos, pronounced, [(word + str(i), synset, []) for i, synset in enumerate(meanings)])
                for word, pos, pronounced, meanings in [
@@ -40,6 +41,7 @@ def wordnet():
                    ('crap', 'n', True, ['crap']), ('genitalia', 'n', False, ['genitalia']),
                    ('penis', 'n', True, ['penis']), ('fairy', 'n', True, ['fairy', 'fairy-slur']),
                    ('plonker', 'n', False, ['plonker']), ('whore', 'n', False, ['tart-person']),
+                   ('hillbilly', 'n', True, ['hillbilly']),
                ]]
     return WordInfo(entries, synsets)
 
@@ -90,6 +92,7 @@ class WordInfoTest(unittest.TestCase):
         self.assertTrue(self.info.is_hurtful('plonker', 'n'))  # "offensive term for" a group
         self.assertTrue(self.info.is_hurtful('whore', 'n'))
         self.assertFalse(self.info.is_hurtful('fairy', 'n'))   # the main meaning is fine
+        self.assertFalse(self.info.is_hurtful('hillbilly', 'n'))  # disparaging, but no slur against a group
         self.assertFalse(self.info.is_usable('plonker', 'n'))
 
     def test_inflected(self):
