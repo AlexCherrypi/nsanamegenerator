@@ -1,19 +1,41 @@
 from defusedxml.minidom import parseString
 import gzip 
 import requests
-from random import randint
 import os
+import re
 import datetime
 
 startingDir = './website/words/'
 
 
-url = 'https://github.com/globalwordnet/english-wordnet/releases/latest/download/english-wordnet-'+datetime.date.today().strftime("%Y")+'.xml.gz'
+def findDownloadUrl():
+    # The asset name contains the release year, which is not necessarily the current year,
+    # so look up the actual file name of the latest release.
+    try:
+        release = requests.get('https://api.github.com/repos/globalwordnet/english-wordnet/releases/latest', timeout=60)
+        release.raise_for_status()
+        for asset in release.json()['assets']:
+            if re.fullmatch(r'english-wordnet-\d{4}\.xml\.gz', asset['name']):
+                return asset['browser_download_url']
+        print("No matching asset found in latest release, probing years instead")
+    except requests.RequestException as e:
+        print("Could not query latest release ("+str(e)+"), probing years instead")
+    # Fallback: try the last few years, newest first
+    for year in range(datetime.date.today().year, datetime.date.today().year - 6, -1):
+        candidate = 'https://github.com/globalwordnet/english-wordnet/releases/latest/download/english-wordnet-'+str(year)+'.xml.gz'
+        if requests.head(candidate, allow_redirects=True, timeout=60).ok:
+            return candidate
+    raise RuntimeError("Could not find a WordNet download")
+
+url = findDownloadUrl()
 print("Downloading from '"+ url +"'")
-download = requests.get(url).content
+response = requests.get(url, timeout=600)
+response.raise_for_status()
+download = response.content
+del response
 print("Download from '"+ url +"' finished")
 del url
-print("Decopressing ...")
+print("Decompressing ...")
 xml = gzip.decompress(download).decode("utf-8")
 del download
 print("Parsing xml ...")

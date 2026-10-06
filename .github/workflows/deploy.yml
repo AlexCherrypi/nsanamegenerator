@@ -16,6 +16,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write # needed to keep the scheduled workflow enabled
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
@@ -32,8 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip' # caching pip dependencies
@@ -44,7 +45,7 @@ jobs:
         run: echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
       
       - name: Check if word buildscript changed
-        uses: dorny/paths-filter@v2
+        uses: dorny/paths-filter@v3
         id: checkChanges
         with:
           filters: |
@@ -54,7 +55,7 @@ jobs:
       - name: Restore cached words
         if: steps.checkChanges.outputs.generateWords-changed != 'true'
         id: cache-words-restore
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: './website/words'
           key: cache-words-${{ steps.date.outputs.date }}
@@ -64,22 +65,30 @@ jobs:
         run: python generateWords.py
 
       - name: Safe words
-        if: steps.cache-words-restore.outputs.cache-hit != 'true' || steps.checkChanges.outputs.generateWords-changed != 'true'
+        if: steps.cache-words-restore.outputs.cache-hit != 'true'
         id: cache-words-save
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           path: './website/words'
           #key: ${{ steps.cache-words-restore.outputs.cache-primary-key }}
           key: cache-words-${{ steps.date.outputs.date }}
      
       - name: Setup Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v5
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: './website'
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
+
+      # GitHub disables scheduled workflows after 60 days without repository activity.
+      # Re-enabling the workflow via the API resets that timer.
+      - name: Keep scheduled workflow alive
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/deploy.yml/enable"
