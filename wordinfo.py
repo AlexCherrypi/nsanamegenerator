@@ -12,12 +12,14 @@ that is enough to tell the funny words from the obscure ones:
                while obscure ones don't (wicopy, haemoptysis).
 - mood:        adjectives describing a mood or temper, like the ones in real
                codenames (EGOTISTICALGIRAFFE, IRATEMONK, SURLY SPAWN).
-- vulgar:      crude, sexual and bathroom words (but no medical terms).
+- vulgar:      crude, sexual and bathroom words (but no medical terms). They
+               only show up in the vulgar lists, at the end of all others.
 - hurtful:     slurs against groups of people and words about sexual
                orientation or abuse. They are no fun, so they always come last.
 """
 
 import collections
+import functools
 import math
 import re
 from typing import NamedTuple
@@ -144,12 +146,14 @@ class WordInfo:
         """The category of the main meaning: animal, food, person, all (adjectives), ..."""
         return self.synsets[self.senses[(word, pos)][0]].lexfile.split('.')[1].lower()
 
+    @functools.lru_cache(maxsize=None)
     def familiarity(self, word, pos):
         """A score for how well known a word is: about 0 for wicopy, 15 for fox."""
         in_texts = self.in_texts[word] + (self.in_texts[word + 's'] if pos == 'n' else 0)
         return (math.log2(1 + in_texts) + math.log2(1 + self.in_compounds[word])
                 + 1.5 * math.log2(max(1, self.meanings[word])) + (word in self.pronounced))
 
+    @functools.lru_cache(maxsize=None)
     def is_main_pos(self, word, pos):
         """Whether the word is mainly used as this part of speech (heavy is no noun)."""
         return all(len(self.senses[(word, pos)]) >= len(self.senses.get((word, other), ()))
@@ -158,11 +162,13 @@ class WordInfo:
     def is_mood(self, word, pos):
         return pos == 'a' and word in self.moods
 
+    @functools.lru_cache(maxsize=None)
     def is_hurtful(self, word, pos):
         main = self.senses[(word, pos)][0]
         return (word.lower() in HURTFUL_WORDS or 'ethnic_slur' in self.labels[main]
                 or bool(SLUR_DEFINITION.search(self.synsets[main].text)))
 
+    @functools.lru_cache(maxsize=None)
     def is_vulgar(self, word, pos):
         meanings = self.senses[(word, pos)]
         # no slur, not even in a minor meaning (fairy)
@@ -175,6 +181,7 @@ class WordInfo:
         return (word.lower() in VULGAR_WORDS or obscene[0] or 2 * sum(obscene) > len(obscene)
                 or 'obscenity' in self.sense_labels[(word, pos)] and len(meanings) == 1)
 
+    @functools.lru_cache(maxsize=None)
     def is_inflected(self, word, pos):
         """Plurals and gerunds like days or making, which make dull names."""
         return pos == 'n' and (
@@ -191,13 +198,16 @@ class WordInfo:
                     todo.append(parent)
         return found
 
-    def is_usable(self, word, pos):
-        """Whether the word may be shown at all: no slurs and no plurals or gerunds."""
-        return not self.is_hurtful(word, pos) and not self.is_inflected(word, pos)
+    def is_usable(self, word, pos, extra=None):
+        """Whether the word may be shown from an extra list: never slurs, plurals
+        or gerunds, and vulgar words only from the vulgar lists."""
+        return (not self.is_hurtful(word, pos) and not self.is_inflected(word, pos)
+                and self.is_vulgar(word, pos) == (extra == 'vulgar'))
 
-    def rank(self, word, pos):
-        """Sort key for a list: familiar words first, words that aren't usable last."""
-        return (not self.is_usable(word, pos), not self.is_main_pos(word, pos), -self.familiarity(word, pos), word)
+    def rank(self, word, pos, extra=None):
+        """Sort key for an extra list: familiar words first, words that may not be shown from it last."""
+        return (not self.is_usable(word, pos, extra), not self.is_main_pos(word, pos),
+                -self.familiarity(word, pos), word)
 
     def extra_lists(self, word, pos):
         """The extra lists a word belongs to: its category, and mood or vulgar."""

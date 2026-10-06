@@ -99,10 +99,18 @@ class WordInfoTest(unittest.TestCase):
         self.assertFalse(self.info.is_usable('days', 'n'))
 
     def test_unusable_words_come_last(self):
-        words = ['plonker', 'wicopy', 'days', 'fox', 'whore', 'animal']
+        words = ['plonker', 'wicopy', 'days', 'fox', 'whore', 'animal', 'crap']
         ranked = sorted(words, key=lambda word: self.info.rank(word, 'n'))
-        self.assertEqual(set(ranked[-3:]), {'plonker', 'days', 'whore'})
+        self.assertEqual(set(ranked[-4:]), {'plonker', 'days', 'whore', 'crap'})
         self.assertEqual(ranked[0], 'fox')
+
+    def test_vulgar_words_only_in_vulgar_lists(self):
+        self.assertFalse(self.info.is_usable('crap', 'n'))
+        self.assertTrue(self.info.is_usable('crap', 'n', 'vulgar'))
+        self.assertTrue(self.info.is_usable('fox', 'n', 'animal'))
+        self.assertFalse(self.info.is_usable('fox', 'n', 'vulgar'))
+        ranked = sorted(['fox', 'crap', 'plonker'], key=lambda word: self.info.rank(word, 'n', 'vulgar'))
+        self.assertEqual(ranked[0], 'crap')
 
     def test_extra_lists(self):
         self.assertEqual(self.info.extra_lists('fox', 'n'), ['animal'])

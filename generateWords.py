@@ -85,25 +85,25 @@ for entry in entries:
 # Extra lists per category of the main meaning (nsgl-animal, nsgl-food, ...) and
 # for moods and vulgar words (asl-mood, nsgl-vulgar), see wordinfo.py. They are
 # sorted from the best known to the most obscure word, so the website can pick
-# among the best known ones only. Slurs, plurals and the like come last, after
-# the number of words in usable.txt.
+# among the best known ones only. Words that may not be shown from a list come
+# last, after the number of words in usable.txt: slurs, plurals and the like,
+# and vulgar words except in the vulgar lists.
 print("Finding categories, moods and vulgar words ...")
 info = WordInfo(entries, synsets)
 del entries, synsets
 extraWords = dict()
-rank = dict()
 for word, pos in info.senses:
     if not word.isdigit() and len(word) > 3:
-        rank[(word, pos)] = info.rank(word, pos)
         for extra in info.extra_lists(word, pos):
             for key in lists(word, pos):
                 extraWords.setdefault(key+'-'+extra, list())
                 extraWords[key+'-'+extra].append((word, pos))
 usable = dict()
 for key, value in extraWords.items():
-    value.sort(key=rank.get)
+    extra = key.split('-', 1)[1]
+    value.sort(key=lambda entry: info.rank(entry[0], entry[1], extra))
     extraWords[key] = [word for word, pos in value]
-    usable[key] = sum(not rank[entry][0] for entry in value)
+    usable[key] = sum(info.is_usable(word, pos, extra) for word, pos in value)
 print("For example, the best known nouns per category:")
 for key in sorted(extraWords):
     if key.startswith('nsgl-') or key in ('asl-mood', 'asl-vulgar'):
