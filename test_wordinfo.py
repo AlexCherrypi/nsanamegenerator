@@ -20,8 +20,8 @@ def wordnet():
         'irate': Synset('adj.all', 'feeling or showing extreme anger', ['oewn-irate-a'], [('similar', 'angry')]),
         'light': Synset('adj.all', 'of comparatively little physical weight', ['oewn-light-a'], []),
         'obscenity': Synset('noun.communication', 'the quality of being obscene', ['oewn-obscenity-n'], []),
-        'pastry': Synset('noun.food', 'a small open pie with a fruit filling', ['oewn-tart-n'], []),
-        'tart-person': Synset('noun.person', 'a woman of loose morals', ['oewn-tart-n'], [('exemplifies', 'obscenity')]),
+        'pastry': Synset('noun.food', 'a round soft bread cooked on a griddle', ['oewn-crumpet-n'], []),
+        'crumpet-person': Synset('noun.person', 'an attractive woman', ['oewn-crumpet-n'], [('exemplifies', 'obscenity')]),
         'crap': Synset('noun.substance', 'obscene terms for feces', ['oewn-crap-n'], []),
         'genitalia': Synset('noun.body', 'the external sex organs', ['oewn-genitalia-n'], []),
         'penis': Synset('noun.body', 'the male organ of copulation', ['oewn-penis-n'], [('hypernym', 'genitalia')]),
@@ -36,10 +36,11 @@ def wordnet():
                    ('make', 'v', True, ['make']), ('making', 'n', False, ['make']),
                    ('heavy', 'n', False, ['heavy-n']), ('heavy', 'a', True, ['heavy-a', 'heavy-a2']),
                    ('angry', 'a', True, ['angry']), ('irate', 'a', True, ['irate']), ('light', 'a', True, ['light']),
-                   ('obscenity', 'n', True, ['obscenity']), ('tart', 'n', True, ['pastry', 'tart-person']),
+                   ('obscenity', 'n', True, ['obscenity']), ('crumpet', 'n', True, ['pastry', 'crumpet-person']),
                    ('crap', 'n', True, ['crap']), ('genitalia', 'n', False, ['genitalia']),
                    ('penis', 'n', True, ['penis']), ('fairy', 'n', True, ['fairy', 'fairy-slur']),
-                   ('plonker', 'n', False, ['plonker']), ('whore', 'n', False, ['tart-person']),
+                   ('plonker', 'n', False, ['plonker']), ('whore', 'n', False, ['crumpet-person']),
+                   ('harlot', 'n', False, ['crumpet-person']),
                ]]
     return WordInfo(entries, synsets)
 
@@ -59,7 +60,7 @@ class WordInfoTest(unittest.TestCase):
 
     def test_category_of_main_meaning(self):
         self.assertEqual(self.info.category('fox', 'n'), 'animal')
-        self.assertEqual(self.info.category('tart', 'n'), 'food')
+        self.assertEqual(self.info.category('crumpet', 'n'), 'food')
         self.assertEqual(self.info.category('animal', 'n'), 'tops')
 
     def test_familiarity(self):
@@ -82,7 +83,9 @@ class WordInfoTest(unittest.TestCase):
         self.assertTrue(self.info.is_vulgar('penis', 'n'))    # on the list of crude words
         self.assertFalse(self.info.is_vulgar('genitalia', 'n'))  # a medical term
         self.assertFalse(self.info.is_vulgar('obscenity', 'n'))  # about vulgar words, not one
-        self.assertFalse(self.info.is_vulgar('tart', 'n'))    # a pastry first, obscene only on the side
+        self.assertFalse(self.info.is_vulgar('crumpet', 'n'))  # a pastry first, obscene only on the side
+        self.assertTrue(self.info.is_vulgar('harlot', 'n'))    # crude, but fine in a joke
+        self.assertFalse(self.info.is_vulgar('whore', 'n'))    # a slur, never shown
         self.assertFalse(self.info.is_vulgar('fairy', 'n'))   # has a slur meaning, which is no fun
         self.assertFalse(self.info.is_vulgar('fox', 'n'))
 

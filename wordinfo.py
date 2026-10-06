@@ -60,27 +60,28 @@ timid lonely bored silly clumsy moody sneaky smug gloomy furious anxious friendl
 stubborn grouchy playful wistful pensive dreamy fussy surly sulky jolly grim awkward naughty cocky
 bashful hungry tired restless'''.split()
 
-# Crude words WordNet doesn't mark as obscene.
+# Crude words WordNet doesn't mark as obscene, and crude words for women that are
+# fine in a joke (but not whore, slut or skank, see below).
 VULGAR_WORDS = set('''fart poop pee boob boobs booby booty butt butthole buttocks bum arse ass asshole shit
 crap turd piss fuck fucker fucking bullshit horseshit dick cock prick pecker willy wiener weenie dong
 schlong knob penis vagina vulva pussy snatch clit clitoris scrotum testicle testicles bollocks tits
 titties nipple boner erection orgasm wank wanker dildo vibrator condom porn porno smut horny raunchy
 kinky smutty randy bonk shag hump booger snot vomit puke barf diarrhea diarrhoea potty turd sperm semen
-jizz cum spunk cunt twat'''.split())
+jizz cum spunk cunt twat bitch prostitute harlot strumpet trollop hussy floozy floozie tart cocotte cyprian
+bawd whoreson adulteress fornicatress'''.split())
 
 # Slurs against groups of people (by origin, sexual orientation, disability or
 # for women) and words about sexual orientation or abuse that WordNet doesn't
 # label clearly. Only words whose main meaning is the slur: frog or cracker are
 # fine as animal and food.
-HURTFUL_WORDS = set('''nigger nigga nigra negro negress coon spic spick spik chink gook jap wop dago kike
-hymie sheeny yid heeb wetback beaner greaser greaseball raghead towelhead sambo darky darkey darkie
-pickaninny piccaninny picaninny jigaboo redskin squaw halfbreed mulatto coolie cooly chinaman honky
-whitey limey kraut boche fag faggot fagot dyke queer pouf poof poofter homo lezzie lesbo tranny shemale
-retard retarded spastic spaz mongoloid cripple midget whore slut skank hussy slattern trollop bitch
-harlot strumpet floozy floozie homosexual heterosexual bisexual transsexual homosexuality
-heterosexuality bisexuality lesbianism gayness sodomy sodomite pederasty pederast pedophilia
-paedophilia pedophile paedophile zoophilia bestiality incest rape rapist molester miscegenation
-prostitute tart cocotte cyprian bawd adulteress fornicatress yenta whoreson fagged'''.split())
+HURTFUL_WORDS = set('''nigger nigga nigra negro negress coon spic spick spik chink gook jap wop dago kike hymie sheeny yid
+heeb wetback beaner greaser greaseball raghead towelhead sambo darky darkey darkie pickaninny
+piccaninny picaninny jigaboo redskin squaw halfbreed mulatto coolie cooly chinaman honky whitey
+limey kraut boche fag faggot fagot dyke queer pouf poof poofter homo lezzie lesbo tranny shemale
+retard retarded spastic spaz mongoloid cripple midget whore slut skank slattern homosexual
+heterosexual bisexual transsexual homosexuality heterosexuality bisexuality lesbianism gayness
+sodomy sodomite pederasty pederast pedophilia paedophilia pedophile paedophile zoophilia bestiality
+incest rape rapist molester miscegenation yenta fagged'''.split())
 
 SLUR_DEFINITION = re.compile(
     r'\b(ethnic slur|(offensive|derogatory|disparaging|contemptuous) (term|name|word) for)\b', re.I)
@@ -171,14 +172,18 @@ class WordInfo:
     @functools.lru_cache(maxsize=None)
     def is_vulgar(self, word, pos):
         meanings = self.senses[(word, pos)]
+        if self.is_hurtful(word, pos):
+            return False
+        if word.lower() in VULGAR_WORDS:
+            return True
         # no slur, not even in a minor meaning (fairy)
-        if self.is_hurtful(word, pos) or any('ethnic_slur' in self.labels[synset]
-                                             or SLUR_DEFINITION.search(self.synsets[synset].text) for synset in meanings):
+        if any('ethnic_slur' in self.labels[synset] or SLUR_DEFINITION.search(self.synsets[synset].text)
+               for synset in meanings):
             return False
         obscene = ['obscenity' in self.labels[synset] or bool(OBSCENE_DEFINITION.search(self.synsets[synset].text))
                    for synset in meanings]
-        # the main or most meanings are obscene, not just one of several (tart)
-        return (word.lower() in VULGAR_WORDS or obscene[0] or 2 * sum(obscene) > len(obscene)
+        # the main or most meanings are obscene, not just one of several (seat, bottom)
+        return (obscene[0] or 2 * sum(obscene) > len(obscene)
                 or 'obscenity' in self.sense_labels[(word, pos)] and len(meanings) == 1)
 
     @functools.lru_cache(maxsize=None)
