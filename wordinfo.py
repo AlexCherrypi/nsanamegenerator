@@ -82,10 +82,6 @@ heterosexuality bisexuality lesbianism gayness sodomy sodomite pederasty pederas
 paedophilia pedophile paedophile zoophilia bestiality incest rape rapist molester miscegenation
 prostitute tart cocotte cyprian bawd adulteress fornicatress yenta whoreson fagged'''.split())
 
-# WordNet calls these disparaging, but they are no slurs against a group of people.
-NOT_HURTFUL_WORDS = {'hillbilly', 'bushwhacker', 'apparatchik', 'placeman', 'placeseeker', 'placewoman',
-                     'tree hugger', 'nazi', 'mongrel', 'taco'}
-
 SLUR_DEFINITION = re.compile(
     r'\b(ethnic slur|(offensive|derogatory|disparaging|contemptuous) (term|name|word) for)\b', re.I)
 # "obscene terms for feces" is vulgar, "the quality of being obscene" is not
@@ -168,8 +164,6 @@ class WordInfo:
 
     @functools.lru_cache(maxsize=None)
     def is_hurtful(self, word, pos):
-        if word.lower() in NOT_HURTFUL_WORDS:
-            return False
         main = self.senses[(word, pos)][0]
         return (word.lower() in HURTFUL_WORDS or 'ethnic_slur' in self.labels[main]
                 or bool(SLUR_DEFINITION.search(self.synsets[main].text)))
