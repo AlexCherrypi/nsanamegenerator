@@ -16,6 +16,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write # needed to keep the scheduled workflow enabled
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
@@ -64,7 +65,7 @@ jobs:
         run: python generateWords.py
 
       - name: Safe words
-        if: steps.cache-words-restore.outputs.cache-hit != 'true' || steps.checkChanges.outputs.generateWords-changed != 'true'
+        if: steps.cache-words-restore.outputs.cache-hit != 'true'
         id: cache-words-save
         uses: actions/cache/save@v4
         with:
@@ -83,3 +84,11 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # GitHub disables scheduled workflows after 60 days without repository activity.
+      # Re-enabling the workflow via the API resets that timer.
+      - name: Keep scheduled workflow alive
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/deploy.yml/enable"
