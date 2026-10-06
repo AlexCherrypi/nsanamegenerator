@@ -22,7 +22,10 @@
 async function run () {
  document.getElementById("text").innerText = await random('asl') + " " + await random('nsgl');
 }
-run()
+run().catch(error => {
+ console.error(error);
+ document.getElementById("text").innerText = 'Please reload';
+});
 </script>
 </body>
 </html>
