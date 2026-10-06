@@ -1,5 +1,5 @@
 # Builds the word lists from the dictionary and deploys the website to GitHub Pages.
-# This file is identical in BNDnamegenerator and nsanamegenerator except for its name.
+# This file is the same in BNDnamegenerator and nsanamegenerator except for name and schedule.
 name: Deploy nsanamegenerator
 
 on:
