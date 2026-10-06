@@ -1,10 +1,12 @@
-# Simple workflow for deploying static content to GitHub Pages
+# Builds the word lists from the dictionary and deploys the website to GitHub Pages.
+# This file is the same in BNDnamegenerator and nsanamegenerator except for name and schedule.
 name: Deploy nsanamegenerator
 
 on:
   # Runs on pushes targeting the default branch
   push:
     branches: ["main"]
+  # Picks up dictionary updates
   schedule:
     - cron: '0 3 3 * *'  # on the third of the month at 3am
 
@@ -16,7 +18,6 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  actions: write # needed to keep the scheduled workflow enabled
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
@@ -40,39 +41,33 @@ jobs:
           cache: 'pip' # caching pip dependencies
       - run: pip install -r requirements.txt
 
+      - name: Run tests
+        if: hashFiles('test_*.py') != ''
+        run: python -m unittest -v
+
       - name: Get current date
         id: date
         run: echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
-      
-      - name: Check if word buildscript changed
-        uses: dorny/paths-filter@v3
-        id: checkChanges
-        with:
-          filters: |
-            generateWords-changed:
-              - 'generateWords.py'
 
+      # The words are generated at most once a day, and again as soon as a Python file changes
       - name: Restore cached words
-        if: steps.checkChanges.outputs.generateWords-changed != 'true'
         id: cache-words-restore
         uses: actions/cache/restore@v4
         with:
           path: './website/words'
-          key: cache-words-${{ steps.date.outputs.date }}
+          key: cache-words-${{ steps.date.outputs.date }}-${{ hashFiles('*.py', 'requirements.txt') }}
 
       - name: Generate words
         if: steps.cache-words-restore.outputs.cache-hit != 'true'
         run: python generateWords.py
 
-      - name: Safe words
+      - name: Save words
         if: steps.cache-words-restore.outputs.cache-hit != 'true'
-        id: cache-words-save
         uses: actions/cache/save@v4
         with:
           path: './website/words'
-          #key: ${{ steps.cache-words-restore.outputs.cache-primary-key }}
-          key: cache-words-${{ steps.date.outputs.date }}
-     
+          key: ${{ steps.cache-words-restore.outputs.cache-primary-key }}
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
@@ -84,11 +79,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-      # GitHub disables scheduled workflows after 60 days without repository activity.
-      # Re-enabling the workflow via the API resets that timer.
-      - name: Keep scheduled workflow alive
-        if: github.event_name == 'schedule'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/deploy.yml/enable"
