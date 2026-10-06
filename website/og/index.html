@@ -25,7 +25,10 @@ async function run () {
  document.getElementById("text").innerText = (await w1 + await w2).toUpperCase();
  document.title = 'NSA Name Generator - '+ await w1 +' + '+ await w2;
 }
-run()
+run().catch(error => {
+ console.error(error);
+ document.getElementById("text").innerText = 'PLEASE RELOAD';
+});
 </script>
 </body>
 </html>
