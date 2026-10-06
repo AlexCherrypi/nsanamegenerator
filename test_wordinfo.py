@@ -1,6 +1,6 @@
 import unittest
 
-from wordinfo import Entry, Synset, WordInfo, lists
+from wordinfo import Entry, Synset, WordInfo, blocked, blocked_hash, lists
 
 
 def wordnet():
@@ -18,6 +18,7 @@ def wordnet():
         'heavy-a2': Synset('adj.all', 'of great intensity', ['oewn-heavy-a'], []),
         'angry': Synset('adj.all', 'feeling or showing anger', ['oewn-angry-a'], []),
         'irate': Synset('adj.all', 'feeling or showing extreme anger', ['oewn-irate-a'], [('similar', 'angry')]),
+        'customer': Synset('noun.person', 'an irate customer is an irate person', ['oewn-customer-n'], []),
         'light': Synset('adj.all', 'of comparatively little physical weight', ['oewn-light-a'], []),
         'obscenity': Synset('noun.communication', 'the quality of being obscene', ['oewn-obscenity-n'], []),
         'pastry': Synset('noun.food', 'a round soft bread cooked on a griddle', ['oewn-crumpet-n'], []),
@@ -28,6 +29,17 @@ def wordnet():
         'fairy': Synset('noun.person', 'a small being, human in form', ['oewn-fairy-n'], []),
         'fairy-slur': Synset('noun.person', 'offensive term for a homosexual man', ['oewn-fairy-n'], []),
         'plonker': Synset('noun.person', 'offensive term for a person from somewhere', ['oewn-plonker-n'], []),
+        'whore-v': Synset('verb.social', 'have sex for money', ['oewn-whore-v'], []),
+        'whore-v2': Synset('verb.social', 'compromise oneself for money', ['oewn-whore-v'], []),
+        'santorum': Synset('noun.substance', 'obscene terms for a mixture', ['oewn-santorum-n'], []),
+        'scandal': Synset('noun.communication', 'santorum and santorum and more santorum, santorum all over',
+                          ['oewn-scandal-n'], []),
+        'pen': Synset('noun.artifact', 'a writing implement', ['oewn-pen-n'], []),
+        'penis': Synset('noun.body', 'the male organ', ['oewn-penis-n'], []),
+        'box': Synset('noun.artifact', 'a container', ['oewn-box-n'], []),
+        'sour': Synset('adj.all', 'tasting sour like a lemon', ['oewn-tart-a'], []),
+        'nothing': Synset('noun.quantity', 'a small worthless amount', ['oewn-jack-n', 'oewn-diddlyshit-n'],
+                          [('exemplifies', 'obscenity')]),
     }
     entries = [Entry(word, pos, pronounced, [(word + str(i), synset, []) for i, synset in enumerate(meanings)])
                for word, pos, pronounced, meanings in [
@@ -39,6 +51,10 @@ def wordnet():
                    ('obscenity', 'n', True, ['obscenity']), ('crumpet', 'n', True, ['pastry', 'crumpet-person']),
                    ('crap', 'n', True, ['crap']), ('genitalia', 'n', False, ['genitalia']),
                    ('penis', 'n', True, ['penis']), ('fairy', 'n', True, ['fairy', 'fairy-slur']),
+                   ('whore', 'v', False, ['whore-v', 'whore-v2']), ('santorum', 'n', True, ['santorum']),
+                   ('pen', 'n', True, ['pen']), ('box', 'n', True, ['box']), ('boxes', 'n', False, ['box']),
+                   ('tart', 'a', True, ['sour']), ('jack', 'n', True, ['nothing']),
+                   ('diddlyshit', 'n', False, ['nothing']), ('customer', 'n', True, ['customer']),
                    ('plonker', 'n', False, ['plonker']), ('whore', 'n', False, ['crumpet-person']),
                    ('harlot', 'n', False, ['crumpet-person']),
                ]]
@@ -88,6 +104,9 @@ class WordInfoTest(unittest.TestCase):
         self.assertTrue(self.info.is_vulgar('whore', 'n'))
         self.assertFalse(self.info.is_vulgar('fairy', 'n'))   # has a slur meaning, which is no fun
         self.assertFalse(self.info.is_vulgar('fox', 'n'))
+        self.assertTrue(self.info.is_vulgar('diddlyshit', 'n'))  # an obscene meaning ...
+        self.assertFalse(self.info.is_vulgar('jack', 'n'))       # ... that jack only shares with it
+        self.assertFalse(self.info.is_vulgar('tart', 'a'))       # sour, while tart as a noun is crude
 
     def test_hurtful(self):
         self.assertTrue(self.info.is_hurtful('plonker', 'n'))  # "offensive term for" a group
@@ -99,6 +118,8 @@ class WordInfoTest(unittest.TestCase):
         self.assertTrue(self.info.is_inflected('making', 'n'))
         self.assertFalse(self.info.is_inflected('day', 'n'))
         self.assertFalse(self.info.is_usable('days', 'n'))
+        self.assertTrue(self.info.is_inflected('boxes', 'n'))
+        self.assertFalse(self.info.is_inflected('penis', 'n'))  # no plural of pen
 
     def test_unusable_words_come_last(self):
         words = ['plonker', 'wicopy', 'days', 'fox', 'whore', 'animal', 'crap']
@@ -114,10 +135,31 @@ class WordInfoTest(unittest.TestCase):
         ranked = sorted(['fox', 'crap', 'plonker'], key=lambda word: self.info.rank(word, 'n', 'vulgar'))
         self.assertEqual(ranked[0], 'crap')
 
+    def test_crude_words_first_in_vulgar_lists(self):
+        # whore is used more as a verb and santorum is better known, but crude words come first
+        self.assertFalse(self.info.is_main_pos('whore', 'n'))
+        self.assertGreater(self.info.familiarity('santorum', 'n'), self.info.familiarity('whore', 'n'))
+        ranked = sorted(['santorum', 'whore', 'penis'], key=lambda word: self.info.rank(word, 'n', 'vulgar'))
+        self.assertEqual(ranked[-1], 'santorum')
+
+    def test_mood_seeds_first(self):
+        # irate shows up in more definitions, but angry is one of the moods every child knows
+        self.assertGreater(self.info.familiarity('irate', 'a'), self.info.familiarity('angry', 'a'))
+        ranked = sorted(['irate', 'angry'], key=lambda word: self.info.rank(word, 'a', 'mood'))
+        self.assertEqual(ranked, ['angry', 'irate'])
+
     def test_extra_lists(self):
         self.assertEqual(self.info.extra_lists('fox', 'n'), ['animal'])
         self.assertEqual(self.info.extra_lists('irate', 'a'), ['all', 'mood'])
         self.assertEqual(self.info.extra_lists('crap', 'n'), ['substance', 'vulgar'])
+
+
+class BlockedTest(unittest.TestCase):
+
+    def test_slurs_made_of_two_harmless_words(self):
+        hashes = blocked({'porchmonkey', 'plonker', 'tree hugger'}, {'porch', 'monkey', 'tree', 'hugger', 'plonk'})
+        self.assertEqual(hashes, sorted([blocked_hash('porchmonkey'), blocked_hash('treehugger')]))
+        self.assertEqual(blocked_hash('Tree-Hugger'), blocked_hash('tree hugger'))
 
 
 if __name__ == '__main__':

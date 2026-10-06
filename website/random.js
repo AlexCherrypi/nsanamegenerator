@@ -44,3 +44,18 @@ async function pick(lists, obscure) {
     const [list, top] = choose(lists)
     return random(list, top, obscure)
   }
+
+// Slurs that two harmless words can make up (porch + monkey) are listed as
+// hashes in words/blocked.txt, see generateWords.py. blocked(name) tells if a
+// name is one of them, so that the page can pick again.
+let blockedHashes
+async function blocked(name) {
+    if (blockedHashes === undefined) {
+        const response = await fetch('/nsanamegenerator/words/blocked.txt')
+        if (!response.ok) throw new Error('Could not load the blocked names')
+        blockedHashes = new Set((await response.text()).split('\n'))
+    }
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(name.toLowerCase().replace(/[ -]/g, '')))
+    const hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('').slice(0, 16)
+    return blockedHashes.has(hash)
+  }

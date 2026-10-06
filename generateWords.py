@@ -4,7 +4,7 @@ import requests
 import os
 import re
 import datetime
-from wordinfo import Entry, Synset, WordInfo, lists
+from wordinfo import HURTFUL_WORDS, Entry, Synset, WordInfo, blocked, lists
 
 startingDir = './website/words/'
 
@@ -109,7 +109,17 @@ for key in sorted(extraWords):
     if key.startswith('nsgl-') or key in ('asl-mood', 'asl-vulgar'):
         print("  "+key+": "+', '.join(extraWords[key][:12]))
 
+# Slurs that two harmless words make up (porch + monkey), as hashes so that
+# the website can pick again instead of showing one.
+hurtful = {word for word, pos in info.senses if info.is_hurtful(word, pos)} | HURTFUL_WORDS
+harmless = {word.lower() for word, pos in info.senses if not re.search('[ -]', word) and not info.is_hurtful(word, pos)}
+blockedHashes = blocked(hurtful, harmless)
+print("Blocking "+str(len(blockedHashes))+" slurs made of two harmless words")
+
 print("Generating files ...")
+os.makedirs(startingDir, exist_ok=True)
+with open(startingDir+'blocked.txt', 'w') as f:
+    f.write('\n'.join(blockedHashes))
 for key, value in words.items():
     writeList(key, value)
 for key, value in extraWords.items():
