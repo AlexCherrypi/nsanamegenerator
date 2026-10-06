@@ -13,13 +13,16 @@ that is enough to tell the funny words from the obscure ones:
 - mood:        adjectives describing a mood or temper, like the ones in real
                codenames (EGOTISTICALGIRAFFE, IRATEMONK, SURLY SPAWN).
 - vulgar:      crude, sexual and bathroom words (but no medical terms). They
-               only show up in the vulgar lists, at the end of all others.
+               only show up in the vulgar lists, at the end of all others. The
+               vulgar lists start with the hand-picked crude words, followed by
+               the ones WordNet calls obscene, which are often milder (darn).
 - hurtful:     slurs against groups of people and words about sexual
                orientation or abuse. They are no fun, so they always come last.
 """
 
 import collections
 import functools
+import hashlib
 import math
 import re
 from typing import NamedTuple
@@ -61,19 +64,29 @@ stubborn grouchy playful wistful pensive dreamy fussy surly sulky jolly grim awk
 bashful hungry tired restless'''.split()
 
 # Crude words WordNet doesn't mark as obscene, and crude words for women, which
-# are fine in a vulgar joke.
+# are fine in a vulgar joke. Nouns and verbs, adjectives are listed below
+# (tart is crude as a noun, but just sour as an adjective).
 VULGAR_WORDS = set('''fart poop pee boob boobs booby booty butt butthole buttocks bum arse ass asshole shit
 crap turd piss fuck fucker fucking bullshit horseshit dick cock prick pecker willy wiener weenie dong
 schlong knob penis vagina vulva pussy snatch clit clitoris scrotum testicle testicles bollocks tits
 titties nipple boner erection orgasm wank wanker dildo vibrator condom porn porno smut horny raunchy
 kinky smutty randy bonk shag hump booger snot vomit puke barf diarrhea diarrhoea potty turd sperm semen
 jizz cum spunk cunt twat bitch prostitute harlot strumpet trollop hussy floozy floozie tart cocotte cyprian
-bawd whoreson adulteress fornicatress whore slut skank slattern'''.split())
+bawd whoreson adulteress fornicatress whore slut skank slattern cocksucker motherfucker dickhead arsehole
+chickenshit dogshit shite shitter minge nookie nooky shtup bunghole fanny'''.split())
+VULGAR_ADJECTIVES = set('''horny raunchy kinky smutty randy fucking shitty crappy bitchy pussy slutty sluttish
+whorish shitless'''.split())
+
+# Words WordNet calls obscene that aren't crude: they share a meaning with a
+# crude word (jack and diddly-shit) or are just old-fashioned (crashing bore).
+NOT_VULGAR = set('''jack diddly diddley diddlysquat shucks cuckoo goof goofball bozo fathead firecracker
+illegitimate puss vernacular catty cattish rotten lousy icky crashing'''.split())
 
 # Slurs against groups of people (by origin, sexual orientation or disability)
 # and words about sexual orientation or abuse that WordNet doesn't label
 # clearly. Only words whose main meaning is the slur: frog or cracker are
-# fine as animal and food.
+# fine as animal and food. The last ones are slurs made of two harmless words
+# (porch + monkey), which the website must not put together, see blocked().
 HURTFUL_WORDS = set('''nigger nigga nigra negro negress coon spic spick spik chink gook jap wop dago kike hymie sheeny yid
 heeb wetback beaner greaser greaseball raghead towelhead sambo darky darkey darkie pickaninny
 piccaninny picaninny jigaboo redskin squaw halfbreed mulatto coolie cooly chinaman honky whitey
@@ -81,7 +94,8 @@ limey kraut boche fag faggot fagot dyke queer pouf poof poofter homo lezzie lesb
 retard retarded spastic spaz mongoloid cripple midget homosexual heterosexual bisexual transsexual
 homosexuality heterosexuality bisexuality lesbianism gayness sodomy sodomite pederasty pederast
 pedophilia paedophilia pedophile paedophile zoophilia bestiality incest rape rapist molester
-miscegenation yenta fagged'''.split())
+miscegenation yenta fagged porchmonkey sandmonkey junglebunny tarbaby cameljockey spearchucker sandnigger
+slopehead slanteye zipperhead'''.split())
 
 SLUR_DEFINITION = re.compile(
     r'\b(ethnic slur|(offensive|derogatory|disparaging|contemptuous) (term|name|word) for)\b', re.I)
@@ -169,13 +183,19 @@ class WordInfo:
         return (word.lower() in HURTFUL_WORDS or 'ethnic_slur' in self.labels[main]
                 or bool(SLUR_DEFINITION.search(self.synsets[main].text)))
 
+    def is_crude(self, word, pos):
+        """Whether the word is on the hand-picked list of crude words."""
+        return word.lower() in (VULGAR_ADJECTIVES if pos in ('a', 's') else VULGAR_WORDS)
+
     @functools.lru_cache(maxsize=None)
     def is_vulgar(self, word, pos):
         meanings = self.senses[(word, pos)]
         if self.is_hurtful(word, pos):
             return False
-        if word.lower() in VULGAR_WORDS:
+        if self.is_crude(word, pos):
             return True
+        if word.lower() in NOT_VULGAR:
+            return False
         # no slur, not even in a minor meaning (fairy)
         if any('ethnic_slur' in self.labels[synset] or SLUR_DEFINITION.search(self.synsets[synset].text)
                for synset in meanings):
@@ -188,11 +208,12 @@ class WordInfo:
 
     @functools.lru_cache(maxsize=None)
     def is_inflected(self, word, pos):
-        """Plurals and gerunds like days or making, which make dull names."""
+        """Plurals and gerunds like days, boxes or making, which make dull names
+        (but penis is no plural of pen)."""
         return pos == 'n' and (
             word.endswith('ing') and ((word[:-3], 'v') in self.senses or (word[:-3] + 'e', 'v') in self.senses)
-            or word.endswith('s') and not word.endswith('ss')
-            and ((word[:-1], 'n') in self.senses or (word[:-2], 'n') in self.senses))
+            or word.endswith('s') and not word.endswith('ss') and (word[:-1], 'n') in self.senses
+            or word.endswith('es') and (word[:-2], 'n') in self.senses)
 
     def ancestors(self, synset_id):
         found, todo = set(), [synset_id]
@@ -210,8 +231,17 @@ class WordInfo:
                 and self.is_vulgar(word, pos) == (extra == 'vulgar'))
 
     def rank(self, word, pos, extra=None):
-        """Sort key for an extra list: familiar words first, words that may not be shown from it last."""
-        return (not self.is_usable(word, pos, extra), not self.is_main_pos(word, pos),
+        """Sort key for an extra list: familiar words first, words that may not be shown from it last.
+
+        The vulgar lists start with the hand-picked crude words, even if they
+        are used more as a verb (whore), and the mood list with its seeds."""
+        if extra == 'vulgar':
+            first = self.is_crude(word, pos)
+        elif extra == 'mood':
+            first = word in MOOD_SEEDS
+        else:
+            first = self.is_main_pos(word, pos)
+        return (not self.is_usable(word, pos, extra), not first, not (self.is_main_pos(word, pos) or extra == 'vulgar'),
                 -self.familiarity(word, pos), word)
 
     def extra_lists(self, word, pos):
@@ -222,3 +252,19 @@ class WordInfo:
         if self.is_vulgar(word, pos):
             extras.append('vulgar')
         return extras
+
+
+def blocked_hash(name):
+    """A short hash of a name in lower case without spaces and dashes, see blocked()."""
+    return hashlib.sha256(re.sub('[ -]', '', name.lower()).encode('utf-8')).hexdigest()[:16]
+
+
+def blocked(hurtful, words):
+    """Hashes of the hurtful words that two harmless words can make up (porch +
+    monkey), so that the website can pick again when it comes up with one of them."""
+    hashes = set()
+    for word in hurtful:
+        lower = re.sub('[ -]', '', word.lower())
+        if any(lower[:split] in words and lower[split:] in words for split in range(1, len(lower))):
+            hashes.add(blocked_hash(lower))
+    return sorted(hashes)

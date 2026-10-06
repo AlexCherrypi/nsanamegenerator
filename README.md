@@ -21,7 +21,7 @@ If that is too tame, two settings in the URL make the names ruder or nerdier. Th
 | at least one per name | [?vulgar=2](https://alexcherrypi.github.io/nsanamegenerator/?vulgar=2) ([OG](https://alexcherrypi.github.io/nsanamegenerator/og/?vulgar=2)) | [?nerd=2](https://alexcherrypi.github.io/nsanamegenerator/?nerd=2) ([OG](https://alexcherrypi.github.io/nsanamegenerator/og/?nerd=2)) |
 | nothing else | [?vulgar=3](https://alexcherrypi.github.io/nsanamegenerator/?vulgar=3) ([OG](https://alexcherrypi.github.io/nsanamegenerator/og/?vulgar=3)) | [?nerd=3](https://alexcherrypi.github.io/nsanamegenerator/?nerd=3) ([OG](https://alexcherrypi.github.io/nsanamegenerator/og/?nerd=3)) |
 
-Slurs against groups of people never show up, not even with ?vulgar=3.
+Slurs against groups of people never show up, not even with ?vulgar=3, and neither do slurs made of two harmless words (porch + monkey): the page simply picks again.
 
 This is just a little side project of mine, so don't expect regular updates and a lot of ongoing development.
 
@@ -41,7 +41,7 @@ The whole dictionary is available as word lists at `words/<list>/<number>.txt`, 
 | `g` / `d` | no dash / dash |
 | `l` / `u` | lower case / upper case letters |
 
-Every list also comes with extra lists sorted from the best known to the most obscure word (see [wordinfo.py](wordinfo.py)): one per category of the word's main meaning, like `nsgl-animal`, `nsgl-food` or `nsgl-person`, and `asl-mood` for moods and `nsgl-vulgar` for crude words. Words that should not be shown from a list come last, after the number of words in `usable.txt`: slurs and plurals, and crude words except in the vulgar lists.
+Every list also comes with extra lists sorted from the best known to the most obscure word (see [wordinfo.py](wordinfo.py)): one per category of the word's main meaning, like `nsgl-animal`, `nsgl-food` or `nsgl-person`, and `asl-mood` for moods and `nsgl-vulgar` for crude words. Words that should not be shown from a list come last, after the number of words in `usable.txt`: slurs and plurals, and crude words except in the vulgar lists. `words/blocked.txt` holds short hashes of the slurs two harmless words can make up.
 
 
 [![CC BY-SA 4.0][cc-by-sa-image]][cc-by-sa]
